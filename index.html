@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kuis Interaktif Pecahan - Kelas 5 SD</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Canvas Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Google Fonts: Fredoka & Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        fredoka: ['Fredoka', 'sans-serif'],
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            blue: '#0284c7',
+                            lightBlue: '#e0f2fe',
+                            yellow: '#f59e0b',
+                            pink: '#ec4899',
+                            purple: '#8b5cf6',
+                            green: '#10b981',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #fef3c7 100%);
+            min-height: 100vh;
+        }
+
+        .heading-font {
+            font-family: 'Fredoka', cursive;
+        }
+
+        /* Format Pecahan Tegak Lurus */
+        .fraction {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 5px;
+            font-weight: 700;
+            font-size: 1.05em;
+        }
+        .fraction .numerator {
+            border-bottom: 2px solid currentColor;
+            padding-bottom: 1px;
+            line-height: 1.1;
+        }
+        .fraction .denominator {
+            padding-top: 1px;
+            line-height: 1.1;
+        }
+
+        .option-btn {
+            transition: all 0.2s ease-in-out;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px -3px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .nav-collapse-enter {
+            transition: all 0.3s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-slate-800 pb-20">
+
+    <!-- Header Navigation Bar -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white text-xl shadow-md font-bold heading-font">
+                    🏆
+                </div>
+                <div>
+                    <h1 class="heading-font text-xl md:text-2xl text-slate-800 font-bold leading-none">Kuis Pecahan Interaktif</h1>
+                    <p class="text-xs text-sky-600 font-semibold mt-0.5">30 Soal Penjumlahan, Pengurangan & Penyederhanaan Pecahan</p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls -->
+            <div class="flex items-center gap-2.5">
+                <!-- Toggle Navigation Visibility Button -->
+                <button onclick="toggleNavigationGrid()" id="btn-toggle-nav-header" class="px-3 py-1.5 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5" title="Sembunyikan/Tampilkan Navigasi Soal">
+                    <i id="header-nav-icon" class="fa-solid fa-eye-slash"></i>
+                    <span id="header-nav-text" class="hidden sm:inline">Sembunyikan Navigasi</span>
+                </button>
+
+                <button onclick="confirmResetQuiz()" class="px-3.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Ulang Kuis</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-5xl mx-auto px-4 mt-6 space-y-5">
+
+        <!-- Quiz Progress & Dashboard Summary -->
+        <div class="bg-white p-4 md:p-5 rounded-3xl border border-sky-100 shadow-sm grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+            <div class="bg-sky-50/80 p-3 rounded-2xl border border-sky-100">
+                <span class="text-[11px] font-bold text-sky-600 uppercase tracking-wider block">Total Progress</span>
+                <span id="stat-progress" class="heading-font text-2xl font-bold text-sky-700">0 / 30</span>
+            </div>
+            <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-100">
+                <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">Jawaban Benar</span>
+                <span id="stat-correct" class="heading-font text-2xl font-bold text-emerald-700">0</span>
+            </div>
+            <div class="bg-rose-50/80 p-3 rounded-2xl border border-rose-100">
+                <span class="text-[11px] font-bold text-rose-600 uppercase tracking-wider block">Jawaban Salah</span>
+                <span id="stat-incorrect" class="heading-font text-2xl font-bold text-rose-700">0</span>
+            </div>
+            <div class="bg-amber-50/80 p-3 rounded-2xl border border-amber-100">
+                <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider block">Skor Saat Ini</span>
+                <span id="stat-score" class="heading-font text-2xl font-bold text-amber-700">0%</span>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
+            <div id="quiz-progress-bar" class="bg-gradient-to-r from-sky-400 to-indigo-500 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+        </div>
+
+        <!-- Hidden Navigation Quick Bar (Appears when nav is collapsed) -->
+        <div id="nav-collapsed-banner" class="hidden bg-sky-50 border border-sky-200 rounded-2xl p-3 flex items-center justify-between transition-all">
+            <div class="flex items-center gap-2 text-xs font-semibold text-sky-800">
+                <i class="fa-solid fa-circle-info text-sky-500"></i>
+                <span>Navigasi Soal Tersembunyi untuk tampilan lebih luas.</span>
+            </div>
+            <button onclick="toggleNavigationGrid()" class="text-xs bg-white hover:bg-sky-100 border border-sky-300 px-3 py-1 rounded-xl text-sky-700 font-bold transition-all flex items-center gap-1">
+                <i class="fa-solid fa-eye"></i> Tampilkan Navigasi
+            </button>
+        </div>
+
+        <!-- Navigation Grid Panel (Numbers 1-30) -->
+        <div id="nav-grid-card" class="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm space-y-3 transition-all duration-300">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b pb-3 border-slate-100">
+                <div class="flex items-center gap-2">
+                    <h3 class="heading-font font-bold text-slate-800 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-list-ol text-sky-500"></i> Navigasi Soal (1 - 30)
+                    </h3>
+                    <span class="text-[11px] text-slate-400 font-medium hidden sm:inline">(Klik nomor untuk pindah)</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="toggleNavigationGrid()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2.5 py-1 rounded-xl font-bold transition-all flex items-center gap-1">
+                        <i id="btn-grid-toggle-icon" class="fa-solid fa-chevron-up"></i>
+                        <span id="btn-grid-toggle-text">Sembunyikan</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Filter Buttons & Legend -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                <div class="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs font-semibold">
+                    <button onclick="filterGrid('all')" id="btn-filter-all" class="px-3 py-1 rounded-xl bg-sky-500 text-white font-bold shadow-sm">
+                        Semua (30)
+                    </button>
+                    <button onclick="filterGrid('direct')" id="btn-filter-direct" class="px-3 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Soal Langsung (1-20)
+                    </button>
+                    <button onclick="filterGrid('story')" id="btn-filter-story" class="px-3 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Soal Cerita (21-30)
+                    </button>
+                    <button onclick="filterGrid('unanswered')" id="btn-filter-unanswered" class="px-3 py-1 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        Belum Diisi
+                    </button>
+                </div>
+
+                <div class="flex items-center gap-3 text-[11px] font-semibold text-slate-500 flex-wrap">
+                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-slate-200 border"></span> Belum</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Benar</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-full bg-rose-500"></span> Salah</span>
+                    <span class="inline-flex items-center gap-1"><span class="w-3 h-3 rounded-full border-2 border-sky-500"></span> Aktif</span>
+                </div>
+            </div>
+
+            <!-- Number Buttons Grid -->
+            <div id="grid-container" class="grid grid-cols-6 sm:grid-cols-10 md:grid-cols-15 gap-2 pt-2">
+                <!-- Javascript will generate 30 buttons here -->
+            </div>
+        </div>
+
+        <!-- Question Display Card -->
+        <div id="question-card" class="bg-white p-6 md:p-8 rounded-3xl border border-sky-100 shadow-md space-y-6">
+            
+            <!-- Question Header Info -->
+            <div class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span id="badge-number" class="bg-sky-500 text-white font-bold heading-font text-sm px-3.5 py-1 rounded-2xl shadow-sm">
+                        Soal #1
+                    </span>
+                    <span id="badge-category" class="bg-sky-50 text-sky-700 font-bold text-xs px-3 py-1 rounded-full border border-sky-200">
+                        Soal Langsung
+                    </span>
+                    <span id="badge-operation" class="bg-purple-50 text-purple-700 font-bold text-xs px-3 py-1 rounded-full border border-purple-200">
+                        Penjumlahan
+                    </span>
+                    <span id="badge-simplify" class="hidden bg-amber-100 text-amber-800 font-bold text-xs px-2.5 py-1 rounded-full border border-amber-300">
+                        ✨ Perlu Disederhanakan
+                    </span>
+                </div>
+                <span id="badge-denominator" class="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    Penyebut Sama
+                </span>
+            </div>
+
+            <!-- Question Text / Problem Body -->
+            <div class="space-y-3">
+                <h2 id="question-text" class="text-lg md:text-xl font-bold text-slate-800 leading-relaxed flex items-center gap-2 flex-wrap min-h-[60px]">
+                    <!-- Question string rendered here -->
+                </h2>
+            </div>
+
+            <!-- Answer Options Grid (A, B, C, D) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 pt-1" id="options-container">
+                <!-- 4 Option Buttons rendered dynamically -->
+            </div>
+
+            <!-- Feedback / Solution Box (Hidden until answered) -->
+            <div id="feedback-box" class="hidden rounded-2xl p-5 border space-y-2.5 transition-all">
+                <div class="flex items-center gap-2 font-bold heading-font text-base" id="feedback-title">
+                    <!-- Correct/Incorrect Title -->
+                </div>
+                <div id="feedback-explanation" class="text-xs md:text-sm text-slate-700 leading-relaxed">
+                    <!-- Step-by-step solution text -->
+                </div>
+            </div>
+
+            <!-- Prev / Next Navigation Controls -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                <button onclick="prevQuestion()" id="btn-prev" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs md:text-sm rounded-2xl transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <i class="fa-solid fa-arrow-left"></i>
+                    <span>Sebelumnya</span>
+                </button>
+
+                <button onclick="jumpToUnanswered()" class="hidden md:inline-flex px-4 py-2 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-xl border border-amber-200 items-center gap-1.5">
+                    <span>Lompat ke Belum Diisi</span>
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+
+                <button onclick="nextQuestion()" id="btn-next" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs md:text-sm rounded-2xl shadow-md transition-all flex items-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed">
+                    <span>Berikutnya</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Quiz Completion Modal -->
+    <div id="modal-result" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 space-y-6 shadow-2xl text-center relative overflow-hidden">
+            <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 text-white text-4xl font-bold rounded-full flex items-center justify-center mx-auto shadow-lg heading-font">
+                🥇
+            </div>
+
+            <div>
+                <span class="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-3 py-1 rounded-full">Kuis Selesai!</span>
+                <h2 class="heading-font text-2xl md:text-3xl font-bold text-slate-800 mt-2">Hasil Akhir Kamu</h2>
+                <p class="text-xs text-slate-500 mt-1">Selamat! Kamu telah menyelesaikan seluruh 30 soal pecahan.</p>
+            </div>
+
+            <!-- Score Cards -->
+            <div class="grid grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Skor Akhir</span>
+                    <span id="modal-final-score" class="heading-font text-2xl font-bold text-sky-600">0%</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Benar</span>
+                    <span id="modal-final-correct" class="heading-font text-2xl font-bold text-emerald-600">0 / 30</span>
+                </div>
+                <div>
+                    <span class="text-[10px] text-slate-400 font-bold block uppercase">Predikat</span>
+                    <span id="modal-rating" class="heading-font text-sm font-bold text-amber-600 mt-1 block">Sangat Baik</span>
+                </div>
+            </div>
+
+            <!-- Breakdown -->
+            <div class="text-left bg-sky-50/70 p-4 rounded-2xl border border-sky-100 space-y-2 text-xs">
+                <div class="flex justify-between font-semibold">
+                    <span>Soal Langsung (20 Soal):</span>
+                    <span id="modal-direct-score" class="font-bold text-sky-700">0 / 20</span>
+                </div>
+                <div class="flex justify-between font-semibold">
+                    <span>Soal Cerita (10 Soal):</span>
+                    <span id="modal-story-score" class="font-bold text-purple-700">0 / 10</span>
+                </div>
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="flex flex-col sm:flex-row gap-3 pt-2">
+                <button onclick="closeResultModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-all">
+                    Tinjau Jawaban 🔍
+                </button>
+                <button onclick="confirmResetQuiz()" class="flex-1 py-3 bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs rounded-2xl shadow-md hover:shadow-lg transition-all">
+                    Coba Lagi 🚀
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Quiz Engine -->
+    <script>
+        // Helper untuk mengubah string format "a/b" menjadi format pecahan tegak lurus
+        function formatFractions(text) {
+            if (!text) return '';
+            return text.replace(/(\d+)\/(\d+)/g, '<span class="fraction"><span class="numerator">$1</span><span class="denominator">$2</span></span>');
+        }
+
+        // --- DATABASE 30 SOAL PECAHAN ---
+        // Semua opsi jawaban yang bisa disederhanakan kini MENGGUNAKAN BENTUK PALING SEDERHANA!
+        const questionsData = [
+            // 1 - Direct Addition Same Denominator
+            {
+                id: 1, type: "direct", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Berapa hasil penjumlahan dari 2/7 + 3/7 ?",
+                options: ["4/7", "5/7", "6/7", "5/14"],
+                correct: 1, // B (5/7)
+                explain: "Penyebut sudah sama (7). Cukup jumlahkan pembilangnya:\n2 + 3 = 5\nHasilnya 5/7 (sudah bentuk paling sederhana)."
+            },
+            // 2 - Direct Subtraction Same Denominator (Requires simplification: 3/9 -> 1/3)
+            {
+                id: 2, type: "direct", category: "Pengurangan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Berapa hasil pengurangan dari 5/9 - 2/9 dalam bentuk pecahan paling sederhana?",
+                options: ["2/9", "4/9", "1/3", "2/3"],
+                correct: 2, // C (1/3)
+                explain: "1. Penyebut sudah sama (9), kurangkan pembilangnya:\n5 - 2 = 3/9\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan FPB-nya yaitu 3.\n3/9 = (3 ÷ 3) / (9 ÷ 3) = <b>1/3</b>."
+            },
+            // 3 - Direct Addition Same Denominator
+            {
+                id: 3, type: "direct", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Hitunglah nilai dari 1/5 + 3/5 =",
+                options: ["4/5", "3/5", "4/10", "2/5"],
+                correct: 0, // A (4/5)
+                explain: "Penyebut sudah sama (5). Jumlahkan pembilangnya: 1 + 3 = 4. Hasilnya 4/5."
+            },
+            // 4 - Direct Subtraction Same Denominator (Requires simplification: 3/12 -> 1/4)
+            {
+                id: 4, type: "direct", category: "Pengurangan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Hitunglah nilai dari 7/12 - 4/12 dalam bentuk pecahan paling sederhana =",
+                options: ["1/3", "1/6", "5/12", "1/4"],
+                correct: 3, // D (1/4)
+                explain: "1. Kurangkan pembilangnya karena penyebut sudah sama (12):\n7 - 4 = 3/12\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 3.\n3/12 = (3 ÷ 3) / (12 ÷ 3) = <b>1/4</b>."
+            },
+            // 5 - Direct Addition Same Denominator
+            {
+                id: 5, type: "direct", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Hasil dari 4/11 + 5/11 adalah...",
+                options: ["8/11", "9/22", "9/11", "10/11"],
+                correct: 2, // C (9/11)
+                explain: "Penyebut sama (11). Jumlahkan pembilangnya: 4 + 5 = 9. Hasilnya 9/11."
+            },
+            // 6 - Direct Subtraction Same Denominator (Requires simplification: 5/15 -> 1/3)
+            {
+                id: 6, type: "direct", category: "Pengurangan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Hasil dari 8/15 - 3/15 dalam bentuk pecahan paling sederhana adalah...",
+                options: ["2/15", "1/3", "4/15", "1/5"],
+                correct: 1, // B (1/3)
+                explain: "1. Kurangkan pembilangnya: 8 - 3 = 5/15\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 5.\n5/15 = (5 ÷ 5) / (15 ÷ 5) = <b>1/3</b>."
+            },
+            // 7 - Direct Addition Same Denominator
+            {
+                id: 7, type: "direct", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Berapakah hasil dari 3/10 + 4/10 ?",
+                options: ["7/10", "7/20", "8/10", "6/10"],
+                correct: 0, // A (7/10)
+                explain: "Penyebut sama (10). Jumlahkan pembilangnya: 3 + 4 = 7. Hasilnya 7/10."
+            },
+            // 8 - Direct Subtraction Same Denominator (Requires simplification: 4/14 -> 2/7)
+            {
+                id: 8, type: "direct", category: "Pengurangan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Berapakah hasil dari 9/14 - 5/14 dalam bentuk paling sederhana?",
+                options: ["2/7", "3/14", "5/14", "1/7"],
+                correct: 0, // A (2/7)
+                explain: "1. Kurangkan pembilangnya: 9 - 5 = 4/14\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 2.\n4/14 = (4 ÷ 2) / (14 ÷ 2) = <b>2/7</b>."
+            },
+            // 9 - Direct Addition Same Denominator
+            {
+                id: 9, type: "direct", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Hitunglah penjumlahan pecahan berikut: 1/6 + 4/6 =",
+                options: ["4/6", "5/12", "5/6", "3/6"],
+                correct: 2, // C (5/6)
+                explain: "Penyebut sama (6). Jumlahkan pembilangnya: 1 + 4 = 5. Hasilnya 5/6."
+            },
+            // 10 - Direct Subtraction Same Denominator (Requires simplification: 4/20 -> 1/5)
+            {
+                id: 10, type: "direct", category: "Pengurangan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Hitunglah pengurangan pecahan berikut: 11/20 - 7/20 (paling sederhana) =",
+                options: ["1/4", "3/20", "1/5", "3/10"],
+                correct: 2, // C (1/5)
+                explain: "1. Kurangkan pembilangnya: 11 - 7 = 4/20\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 4.\n4/20 = (4 ÷ 4) / (20 ÷ 4) = <b>1/5</b>."
+            },
+
+            // 11 - Direct Addition Different Denominators
+            {
+                id: 11, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Berapa hasil penjumlahan dari 1/3 + 1/4 ?",
+                options: ["2/7", "2/12", "5/12", "7/12"],
+                correct: 3, // D (7/12)
+                explain: "Samakan penyebut (KPK 3 & 4 = 12):\n1/3 = 4/12\n1/4 = 3/12\nHasil = 4/12 + 3/12 = 7/12."
+            },
+            // 12 - Direct Addition Different Denominators
+            {
+                id: 12, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Berapa hasil dari 1/2 + 1/5 ?",
+                options: ["7/10", "2/7", "6/10", "7/7"],
+                correct: 0, // A (7/10)
+                explain: "Samakan penyebut (KPK 2 & 5 = 10):\n1/2 = 5/10\n1/5 = 2/10\nHasil = 5/10 + 2/10 = 7/10."
+            },
+            // 13 - Direct Addition Different Denominators
+            {
+                id: 13, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hitunglah nilai dari 2/3 + 1/5 =",
+                options: ["3/8", "11/15", "13/15", "3/15"],
+                correct: 2, // C (13/15)
+                explain: "Samakan penyebut ke 15:\n2/3 = 10/15\n1/5 = 3/15\nHasil = 10/15 + 3/15 = 13/15."
+            },
+            // 14 - Direct Subtraction Different Denominators
+            {
+                id: 14, type: "direct", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hitunglah nilai dari 3/4 - 1/2 =",
+                options: ["2/2", "1/4", "2/4", "1/2"],
+                correct: 1, // B (1/4)
+                explain: "Samakan penyebut ke KPK = 4.\n3/4 tetap 3/4.\n1/2 diubah menjadi 2/4.\nHasil = 3/4 - 2/4 = 1/4."
+            },
+            // 15 - Direct Subtraction Different Denominators
+            {
+                id: 15, type: "direct", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hasil dari 4/5 - 1/3 adalah...",
+                options: ["7/15", "3/2", "8/15", "3/15"],
+                correct: 0, // A (7/15)
+                explain: "Samakan penyebut ke 15:\n4/5 = 12/15\n1/3 = 5/15\nHasil = 12/15 - 5/15 = 7/15."
+            },
+            // 16 - Direct Subtraction Different Denominators
+            {
+                id: 16, type: "direct", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hasil dari 5/6 - 1/4 adalah...",
+                options: ["4/2", "4/12", "6/12", "7/12"],
+                correct: 3, // D (7/12)
+                explain: "KPK dari 6 dan 4 adalah 12.\n5/6 = 10/12\n1/4 = 3/12\nHasil = 10/12 - 3/12 = 7/12."
+            },
+            // 17 - Direct Addition Different Denominators
+            {
+                id: 17, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Berapakah hasil dari 3/5 + 1/2 ?",
+                options: ["4/7", "11/10", "9/10", "4/10"],
+                correct: 1, // B (11/10)
+                explain: "Samakan penyebut ke 10:\n3/5 = 6/10\n1/2 = 5/10\nHasil = 6/10 + 5/10 = 11/10."
+            },
+            // 18 - Direct Addition Different Denominators
+            {
+                id: 18, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Berapakah hasil dari 2/7 + 1/3 ?",
+                options: ["3/10", "11/21", "13/21", "3/21"],
+                correct: 2, // C (13/21)
+                explain: "Samakan penyebut ke 21:\n2/7 = 6/21\n1/3 = 7/21\nHasil = 6/21 + 7/21 = 13/21."
+            },
+            // 19 - Direct Subtraction Different Denominators
+            {
+                id: 19, type: "direct", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hitunglah pengurangan pecahan berikut: 7/8 - 1/3 =",
+                options: ["13/24", "6/5", "11/24", "6/24"],
+                correct: 0, // A (13/24)
+                explain: "Samakan penyebut ke 24:\n7/8 = 21/24\n1/3 = 8/24\nHasil = 21/24 - 8/24 = 13/24."
+            },
+            // 20 - Direct Addition Different Denominators
+            {
+                id: 20, type: "direct", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Hitunglah penjumlahan pecahan berikut: 5/9 + 1/6 =",
+                options: ["6/15", "11/18", "12/18", "13/18"],
+                correct: 3, // D (13/18)
+                explain: "KPK dari 9 dan 6 adalah 18.\n5/9 = 10/18\n1/6 = 3/18\nHasil = 10/18 + 3/18 = 13/18."
+            },
+
+            // --- SOAL CERITA (21 - 30) ---
+            // 21 - Word Problem Addition
+            {
+                id: 21, type: "story", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Ibu membeli 1/4 kg gula pasir di warung, lalu membeli lagi 2/3 kg gula pasir di pasar. Berapa kg total gula pasir yang dibeli Ibu seluruhnya?",
+                options: ["3/7 kg", "11/12 kg", "3/12 kg", "9/12 kg"],
+                correct: 1, // B (11/12 kg)
+                explain: "Kalimat Matematika: 1/4 + 2/3\nSamakan penyebut ke 12:\n1/4 = 3/12\n2/3 = 8/12\nTotal = 3/12 + 8/12 = 11/12 kg."
+            },
+            // 22 - Word Problem Subtraction (Requires simplification: 3/6 -> 1/2)
+            {
+                id: 22, type: "story", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: true,
+                question: "Budi memiliki pita sepanjang 5/6 meter. Pita tersebut digunakan untuk menghias kado sepanjang 1/3 meter. Berapa meter sisa pita Budi dalam bentuk paling sederhana?",
+                options: ["4/3 meter", "2/6 meter", "4/6 meter", "1/2 meter"],
+                correct: 3, // D (1/2 meter)
+                explain: "1. Kalimat Matematika: 5/6 - 1/3\nUbah 1/3 menjadi pecahan senilai penyebut 6 → 2/6.\nSisa pita = 5/6 - 2/6 = 3/6 meter.\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 3.\n3/6 = (3 ÷ 3) / (6 ÷ 3) = <b>1/2 meter</b>."
+            },
+            // 23 - Word Problem Addition
+            {
+                id: 23, type: "story", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Ani memakan 2/8 bagian kue bolu, sedangkan Dini memakan 3/8 bagian kue yang sama. Berapa total bagian kue bolu yang telah dimakan oleh Ani dan Dini?",
+                options: ["5/8 bagian", "5/16 bagian", "6/8 bagian", "1/8 bagian"],
+                correct: 0, // A (5/8)
+                explain: "Kalimat Matematika: 2/8 + 3/8\nKarena penyebut sama (8), langsung jumlahkan pembilang: 2 + 3 = 5.\nTotal kue dimakan = 5/8 bagian."
+            },
+            // 24 - Word Problem Addition
+            {
+                id: 24, type: "story", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: false,
+                question: "Pak Roni mengecat 3/10 bagian pagar rumahnya pada pagi hari. Sore harinya, ia mengecat lagi 4/10 bagian. Berapa bagian pagar yang sudah dicat seluruhnya?",
+                options: ["7/20 bagian", "8/10 bagian", "7/10 bagian", "1/10 bagian"],
+                correct: 2, // C (7/10)
+                explain: "Kalimat Matematika: 3/10 + 4/10\nPenyebut sudah sama (10).\nTotal bagian = 3 + 4 = 7/10 bagian pagar."
+            },
+            // 25 - Word Problem Subtraction
+            {
+                id: 25, type: "story", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Sebuah botol minum berisi 7/10 liter air. Doni meminum air tersebut sebanyak 2/5 liter. Berapa liter sisa air di dalam botol minum Doni?",
+                options: ["5/5 liter", "3/10 liter", "5/10 liter", "1/5 liter"],
+                correct: 1, // B (3/10 liter)
+                explain: "Kalimat Matematika: 7/10 - 2/5\nUbah 2/5 menjadi pecahan senilai berpenyebut 10 → 4/10.\nSisa air = 7/10 - 4/10 = 3/10 liter."
+            },
+            // 26 - Word Problem Subtraction
+            {
+                id: 26, type: "story", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Ibu memiliki persediaan tepung terigu sebanyak 3/4 kg. Sebanyak 1/2 kg tepung digunakan untuk membuat adonan kue. Berapa kg sisa tepung terigu Ibu?",
+                options: ["1/4 kg", "2/2 kg", "2/4 kg", "1/2 kg"],
+                correct: 0, // A (1/4 kg)
+                explain: "Kalimat Matematika: 3/4 - 1/2\nUbah 1/2 menjadi 2/4.\nSisa tepung = 3/4 - 2/4 = 1/4 kg."
+            },
+            // 27 - Word Problem Addition (Requires simplification: 4/6 -> 2/3)
+            {
+                id: 27, type: "story", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: true,
+                question: "Lahan taman sekolah ditanami bunga mawar sebanyak 1/6 bagian dan ditanami bunga melati sebanyak 1/2 bagian. Berapa total bagian taman yang sudah ditanami bunga dalam bentuk paling sederhana?",
+                options: ["2/8 bagian", "2/6 bagian", "3/6 bagian", "2/3 bagian"],
+                correct: 3, // D (2/3 bagian)
+                explain: "1. Kalimat Matematika: 1/6 + 1/2\nUbah 1/2 menjadi 3/6.\nTotal = 1/6 + 3/6 = 4/6 bagian.\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 2.\n4/6 = (4 ÷ 2) / (6 ÷ 2) = <b>2/3 bagian</b>."
+            },
+            // 28 - Word Problem Addition
+            {
+                id: 28, type: "story", category: "Penjumlahan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Ayah berjalan kaki sejauh 2/5 km dari rumah menuju toko A, lalu melanjutkan berjalan sejauh 1/3 km ke toko B. Berapa km jarak total yang ditempuh Ayah?",
+                options: ["3/8 km", "3/15 km", "11/15 km", "7/15 km"],
+                correct: 2, // C (11/15 km)
+                explain: "Kalimat Matematika: 2/5 + 1/3\nSamakan penyebut ke 15:\n2/5 = 6/15\n1/3 = 5/15\nTotal jarak = 6/15 + 5/15 = 11/15 km."
+            },
+            // 29 - Word Problem Addition (Requires simplification: 8/12 -> 2/3)
+            {
+                id: 29, type: "story", category: "Penjumlahan", denType: "Penyebut Sama",
+                requiresSimplify: true,
+                question: "Sebuah buah semangka dipotong menjadi 12 bagian sama besar. Eko memakan 3/12 bagian dan Rian memakan 5/12 bagian. Berapa bagian semangka yang dimakan mereka berdua dalam bentuk paling sederhana?",
+                options: ["2/3 bagian", "8/24 bagian", "7/12 bagian", "1/12 bagian"],
+                correct: 0, // A (2/3 bagian)
+                explain: "1. Jumlahkan pembilangnya: 3/12 + 5/12 = 8/12 bagian.\n2. <b>Sederhanakan pecahan:</b> Bagi pembilang dan penyebut dengan 4.\n8/12 = (8 ÷ 4) / (12 ÷ 4) = <b>2/3 bagian</b>."
+            },
+            // 30 - Word Problem Subtraction
+            {
+                id: 30, type: "story", category: "Pengurangan", denType: "Penyebut Beda",
+                requiresSimplify: false,
+                question: "Di dalam akuarium terdapat air sebanyak 4/5 bagian. Karena terjadi kebocoran halus, airnya berkurang sebanyak 1/4 bagian. Berapa bagian sisa air di akuarium?",
+                options: ["3/1 bagian", "3/20 bagian", "15/20 bagian", "11/20 bagian"],
+                correct: 3, // D (11/20 bagian)
+                explain: "Kalimat Matematika: 4/5 - 1/4\nSamakan penyebut ke 20:\n4/5 = 16/20\n1/4 = 5/20\nSisa air = 16/20 - 5/20 = 11/20 bagian."
+            }
+        ];
+
+        // --- STATE MANAGEMENT & LOCAL STORAGE ---
+        const STORAGE_KEY = "pecahan_quiz_state_v3";
+        let currentIndex = 0;
+        let userAnswers = new Array(30).fill(null); // stores selected option index (0, 1, 2, 3) or null
+        let currentFilter = "all";
+        let isNavHidden = false;
+
+        // Load saved state on boot
+        function loadState() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length === 30) {
+                        userAnswers = parsed;
+                    }
+                }
+            } catch (e) {
+                console.error("Gagal memuat local storage:", e);
+            }
+        }
+
+        function saveState() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(userAnswers));
+            } catch (e) {
+                console.error("Gagal menyimpan ke local storage:", e);
+            }
+        }
+
+        // Initialize App
+        window.onload = function() {
+            loadState();
+            renderGrid();
+            renderQuestion(currentIndex);
+            updateDashboardStats();
+        };
+
+        // Toggle Navigation Grid Visibility
+        function toggleNavigationGrid() {
+            isNavHidden = !isNavHidden;
+            const gridCard = document.getElementById('nav-grid-card');
+            const collapsedBanner = document.getElementById('nav-collapsed-banner');
+            
+            const headerText = document.getElementById('header-nav-text');
+            const headerIcon = document.getElementById('header-nav-icon');
+            const gridToggleText = document.getElementById('btn-grid-toggle-text');
+            const gridToggleIcon = document.getElementById('btn-grid-toggle-icon');
+
+            if (isNavHidden) {
+                gridCard.classList.add('hidden');
+                collapsedBanner.classList.remove('hidden');
+                
+                if (headerText) headerText.innerText = "Tampilkan Navigasi";
+                if (headerIcon) headerIcon.className = "fa-solid fa-eye";
+                if (gridToggleText) gridToggleText.innerText = "Tampilkan";
+                if (gridToggleIcon) gridToggleIcon.className = "fa-solid fa-chevron-down";
+            } else {
+                gridCard.classList.remove('hidden');
+                collapsedBanner.classList.add('hidden');
+                
+                if (headerText) headerText.innerText = "Sembunyikan Navigasi";
+                if (headerIcon) headerIcon.className = "fa-solid fa-eye-slash";
+                if (gridToggleText) gridToggleText.innerText = "Sembunyikan";
+                if (gridToggleIcon) gridToggleIcon.className = "fa-solid fa-chevron-up";
+            }
+        }
+
+        // Render Question Navigation Grid (1-30)
+        function renderGrid() {
+            const container = document.getElementById('grid-container');
+            container.innerHTML = '';
+
+            questionsData.forEach((q, idx) => {
+                // Apply filter
+                if (currentFilter === 'direct' && q.type !== 'direct') return;
+                if (currentFilter === 'story' && q.type !== 'story') return;
+                if (currentFilter === 'unanswered' && userAnswers[idx] !== null) return;
+
+                const btn = document.createElement('button');
+                btn.onclick = () => selectQuestion(idx);
+                
+                let baseClasses = "w-full h-10 rounded-xl font-bold text-xs flex items-center justify-center transition-all border shadow-sm ";
+                
+                const isAnswered = userAnswers[idx] !== null;
+                const isCorrect = isAnswered && (userAnswers[idx] === q.correct);
+                const isActive = (idx === currentIndex);
+
+                if (isActive) {
+                    baseClasses += "ring-2 ring-sky-500 ring-offset-2 ";
+                }
+
+                if (!isAnswered) {
+                    baseClasses += "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200";
+                } else if (isCorrect) {
+                    baseClasses += "bg-emerald-500 text-white border-emerald-600 shadow-emerald-200";
+                } else {
+                    baseClasses += "bg-rose-500 text-white border-rose-600 shadow-rose-200";
+                }
+
+                btn.className = baseClasses;
+                btn.innerText = idx + 1;
+                container.appendChild(btn);
+            });
+        }
+
+        // Filter Grid View
+        function filterGrid(type) {
+            currentFilter = type;
+            document.querySelectorAll('[id^="btn-filter-"]').forEach(btn => {
+                btn.className = "px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200";
+            });
+            const activeBtn = document.getElementById(`btn-filter-${type}`);
+            if (activeBtn) {
+                activeBtn.className = "px-3 py-1 rounded-xl text-xs font-bold bg-sky-500 text-white shadow-sm";
+            }
+            renderGrid();
+        }
+
+        // Display current question
+        function renderQuestion(index) {
+            currentIndex = index;
+            const q = questionsData[index];
+
+            // Badges
+            document.getElementById('badge-number').innerText = `Soal #${index + 1}`;
+            document.getElementById('badge-category').innerText = q.type === 'direct' ? 'Soal Langsung' : 'Soal Cerita 🍰';
+            document.getElementById('badge-category').className = q.type === 'direct' 
+                ? 'bg-sky-50 text-sky-700 font-bold text-xs px-3 py-1 rounded-full border border-sky-200'
+                : 'bg-amber-50 text-amber-700 font-bold text-xs px-3 py-1 rounded-full border border-amber-200';
+            
+            document.getElementById('badge-operation').innerText = q.category;
+            document.getElementById('badge-denominator').innerText = q.denType;
+
+            // Simplify badge
+            const simplifyBadge = document.getElementById('badge-simplify');
+            if (q.requiresSimplify) {
+                simplifyBadge.classList.remove('hidden');
+            } else {
+                simplifyBadge.classList.add('hidden');
+            }
+
+            // Question Text formatted with upright fractions
+            document.getElementById('question-text').innerHTML = formatFractions(q.question);
+
+            // Render Options
+            const optionsContainer = document.getElementById('options-container');
+            optionsContainer.innerHTML = '';
+
+            const optionLabels = ['A', 'B', 'C', 'D'];
+            const userAnswer = userAnswers[index];
+            const isAnswered = userAnswer !== null;
+
+            q.options.forEach((opt, oIdx) => {
+                const optBtn = document.createElement('button');
+                optBtn.disabled = isAnswered;
+                optBtn.onclick = () => handleAnswerSelect(index, oIdx);
+
+                let optClasses = "option-btn w-full p-4 rounded-2xl border-2 text-left font-semibold text-sm flex items-center justify-between ";
+
+                if (!isAnswered) {
+                    optClasses += "bg-white border-slate-200 text-slate-700 hover:border-sky-400 hover:bg-sky-50/50";
+                } else {
+                    if (oIdx === q.correct) {
+                        optClasses += "bg-emerald-50 border-emerald-500 text-emerald-900 font-bold shadow-md";
+                    } else if (oIdx === userAnswer) {
+                        optClasses += "bg-rose-50 border-rose-500 text-rose-900 font-bold";
+                    } else {
+                        optClasses += "bg-slate-50 border-slate-200 text-slate-400 opacity-60";
+                    }
+                }
+
+                optBtn.className = optClasses;
+
+                let iconStatus = '';
+                if (isAnswered) {
+                    if (oIdx === q.correct) iconStatus = '<span class="text-emerald-600 font-bold text-base"><i class="fa-solid fa-circle-check"></i></span>';
+                    else if (oIdx === userAnswer) iconStatus = '<span class="text-rose-600 font-bold text-base"><i class="fa-solid fa-circle-xmark"></i></span>';
+                }
+
+                optBtn.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-xl ${isAnswered && oIdx === q.correct ? 'bg-emerald-500 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center font-bold text-xs shrink-0">
+                            ${optionLabels[oIdx]}
+                        </span>
+                        <span>${formatFractions(opt)}</span>
+                    </div>
+                    ${iconStatus}
+                `;
+
+                optionsContainer.appendChild(optBtn);
+            });
+
+            // Render Feedback Box
+            const feedbackBox = document.getElementById('feedback-box');
+            if (isAnswered) {
+                feedbackBox.classList.remove('hidden');
+                const isCorrect = (userAnswer === q.correct);
+                
+                if (isCorrect) {
+                    feedbackBox.className = "rounded-2xl p-5 border bg-emerald-50 border-emerald-200 text-emerald-900 space-y-2 block";
+                    document.getElementById('feedback-title').innerHTML = `<i class="fa-solid fa-circle-check text-emerald-600"></i> Jawaban Kamu Benar! 🎉`;
+                } else {
+                    feedbackBox.className = "rounded-2xl p-5 border bg-rose-50 border-rose-200 text-rose-900 space-y-2 block";
+                    document.getElementById('feedback-title').innerHTML = `<i class="fa-solid fa-triangle-exclamation text-rose-600"></i> Jawaban Belum Tepat 😊`;
+                }
+
+                document.getElementById('feedback-explanation').innerHTML = `<b>Langkah Penyelesaian:</b><br>${formatFractions(q.explain).replace(/\n/g, '<br>')}`;
+            } else {
+                feedbackBox.classList.add('hidden');
+            }
+
+            // Update Nav Prev/Next Buttons state
+            document.getElementById('btn-prev').disabled = (index === 0);
+            document.getElementById('btn-next').disabled = (index === questionsData.length - 1);
+
+            renderGrid();
+        }
+
+        // Handle User Selecting Answer
+        function handleAnswerSelect(qIndex, optionIndex) {
+            if (userAnswers[qIndex] !== null) return; // Prevent changing answer once submitted
+
+            userAnswers[qIndex] = optionIndex;
+            saveState();
+
+            // Re-render
+            renderQuestion(qIndex);
+            updateDashboardStats();
+
+            // Trigger confetti if answered correct
+            if (optionIndex === questionsData[qIndex].correct) {
+                confetti({
+                    particleCount: 40,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            }
+
+            // Check if all questions are finished
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            if (answeredCount === 30) {
+                setTimeout(showResultModal, 800);
+            }
+        }
+
+        // Navigation Actions
+        function selectQuestion(idx) {
+            renderQuestion(idx);
+            // Smooth scroll to question card
+            const qCard = document.getElementById('question-card');
+            if (qCard) {
+                qCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                selectQuestion(currentIndex - 1);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentIndex < questionsData.length - 1) {
+                selectQuestion(currentIndex + 1);
+            }
+        }
+
+        function jumpToUnanswered() {
+            const nextUnanswered = userAnswers.findIndex(a => a === null);
+            if (nextUnanswered !== -1) {
+                selectQuestion(nextUnanswered);
+            } else {
+                showResultModal();
+            }
+        }
+
+        // Update Dashboard Header Statistics
+        function updateDashboardStats() {
+            const answeredCount = userAnswers.filter(a => a !== null).length;
+            let correctCount = 0;
+            let incorrectCount = 0;
+
+            userAnswers.forEach((ans, idx) => {
+                if (ans !== null) {
+                    if (ans === questionsData[idx].correct) correctCount++;
+                    else incorrectCount++;
+                }
+            });
+
+            const scorePercent = answeredCount > 0 ? Math.round((correctCount / 30) * 100) : 0;
+
+            document.getElementById('stat-progress').innerText = `${answeredCount} / 30`;
+            document.getElementById('stat-correct').innerText = correctCount;
+            document.getElementById('stat-incorrect').innerText = incorrectCount;
+            document.getElementById('stat-score').innerText = `${scorePercent}%`;
+
+            // Progress bar
+            const percentWidth = Math.round((answeredCount / 30) * 100);
+            document.getElementById('quiz-progress-bar').style.width = `${percentWidth}%`;
+        }
+
+        // Reset Quiz State
+        function confirmResetQuiz() {
+            if (confirm("Apakah kamu yakin ingin mengulang kuis dari awal? Semua jawaban tersimpan akan dihapus.")) {
+                userAnswers = new Array(30).fill(null);
+                localStorage.removeItem(STORAGE_KEY);
+                currentIndex = 0;
+                closeResultModal();
+                renderQuestion(0);
+                updateDashboardStats();
+            }
+        }
+
+        // Show Final Result Modal
+        function showResultModal() {
+            let correctCount = 0;
+            let directCorrect = 0;
+            let storyCorrect = 0;
+
+            userAnswers.forEach((ans, idx) => {
+                if (ans === questionsData[idx].correct) {
+                    correctCount++;
+                    if (questionsData[idx].type === 'direct') directCorrect++;
+                    else storyCorrect++;
+                }
+            });
+
+            const finalPercent = Math.round((correctCount / 30) * 100);
+
+            document.getElementById('modal-final-score').innerText = `${finalPercent}%`;
+            document.getElementById('modal-final-correct').innerText = `${correctCount} / 30`;
+            document.getElementById('modal-direct-score').innerText = `${directCorrect} / 20`;
+            document.getElementById('modal-story-score').innerText = `${storyCorrect} / 10`;
+
+            let rating = "Cukup";
+            if (finalPercent >= 90) rating = "Sangat Luar Biasa! 🌟";
+            else if (finalPercent >= 75) rating = "Sangat Baik! 👏";
+            else if (finalPercent >= 60) rating = "Baik, Tingkatkan Lagi! 💪";
+            
+            document.getElementById('modal-rating').innerText = rating;
+
+            document.getElementById('modal-result').classList.remove('hidden');
+
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.5 }
+            });
+        }
+
+        function closeResultModal() {
+            document.getElementById('modal-result').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
